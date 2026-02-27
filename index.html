@@ -19,7 +19,6 @@
         .part-time { color: #9333ea; border: 2px solid #9333ea; background: #faf5ff; }
         .progress-container { width: 100%; height: 10px; background: #e2e8f0; border-radius: 5px; margin-bottom: 2rem; overflow: hidden; }
         #progress-bar { height: 100%; background: #3b82f6; width: 0%; transition: width 0.4s ease; }
-        /* 입력 팝업 스타일 */
         #login-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
     </style>
 </head>
@@ -28,7 +27,7 @@
     <div id="login-overlay">
         <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full mx-4">
             <h2 class="text-2xl font-black mb-4 text-slate-800">반가워요! 👋</h2>
-            <p class="text-slate-500 mb-6 font-bold">학번과 이름을 입력해주세요.<br>(예: 50101홍길동)</p>
+            <p class="text-slate-500 mb-6 font-bold">번호와 이름을 입력해주세요.<br>(예: 01홍길동)</p>
             <input type="text" id="student-id" class="w-full border-2 border-slate-200 rounded-xl px-4 py-3 mb-4 text-center text-xl font-bold focus:border-blue-500 outline-none" placeholder="입력하세요">
             <button onclick="startGame()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black text-lg hover:bg-blue-700">시작하기</button>
         </div>
@@ -62,7 +61,7 @@
     </div>
 
     <script>
-        let studentId = ""; // 학생이 입력할 ID
+        let studentId = ""; 
         let firstAttemptScore = 0; 
         let correctedCount = 0;    
         let totalFailedCount = 0;
@@ -89,10 +88,7 @@
 
         function startGame() {
             const input = document.getElementById('student-id').value.trim();
-            if (!input) {
-                alert("학번과 이름을 입력해주세요!");
-                return;
-            }
+            if (!input) { alert("번호와 이름을 입력해주세요!"); return; }
             studentId = input;
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('game-app').classList.remove('hidden');
@@ -103,10 +99,8 @@
         function initLevel() {
             const data = currentLevels[currentIndex];
             if (!data) return;
-
             selectedWords = [];
             levelHasError = false;
-            
             document.getElementById('quiz-container').classList.remove('hidden');
             document.getElementById('result-container').classList.add('hidden');
             document.getElementById('korean-hint').innerText = data.ko;
@@ -115,7 +109,6 @@
             document.getElementById('drop-zone').innerHTML = '';
             document.getElementById('message').innerText = '';
             document.getElementById('next-btn').classList.add('hidden');
-
             const pool = document.getElementById('word-pool');
             pool.innerHTML = '';
             [...data.en].sort(() => Math.random() - 0.5).forEach(word => {
@@ -141,7 +134,6 @@
             const removedWord = selectedWords.pop();
             const dropZone = document.getElementById('drop-zone');
             if (dropZone.lastChild) dropZone.lastChild.remove();
-            
             const poolBtns = Array.from(document.querySelectorAll('#word-pool .word-piece'));
             const targetBtn = poolBtns.find(btn => btn.innerText === removedWord && btn.classList.contains('used'));
             if (targetBtn) targetBtn.classList.remove('used');
@@ -154,25 +146,19 @@
             const isCorrect = JSON.stringify(selectedWords) === JSON.stringify(data.en);
             const dropZone = document.getElementById('drop-zone');
             dropZone.innerHTML = '';
-            
             selectedWords.forEach((word, idx) => {
                 const wordBox = document.createElement('div');
-                if (isCorrect) {
-                    wordBox.className = `word-piece part-${data.types[idx]}`;
-                } else {
-                    wordBox.className = `word-piece border-red-500 text-red-500`;
-                    levelHasError = true;
-                }
+                if (isCorrect) wordBox.className = `word-piece part-${data.types[idx]}`;
+                else { wordBox.className = `word-piece border-red-500 text-red-500`; levelHasError = true; }
                 wordBox.innerText = word;
                 dropZone.appendChild(wordBox);
             });
-
             if (isCorrect) {
                 document.getElementById('message').innerText = "Correct! ✨";
                 document.getElementById('message').className = "font-bold text-lg text-green-600";
                 document.getElementById('next-btn').classList.remove('hidden');
             } else {
-                document.getElementById('message').innerText = "Incorrect order. (순서가 틀렸어요)";
+                document.getElementById('message').innerText = "Incorrect order.";
                 document.getElementById('message').className = "font-bold text-lg text-red-400";
                 if (!isReviewMode && !incorrectLevels.includes(data)) incorrectLevels.push(data);
             }
@@ -186,7 +172,6 @@
             currentIndex++;
             if (currentIndex < currentLevels.length) initLevel();
             else showResult();
-            
             document.getElementById('score-text').innerText = `Score: ${isReviewMode ? 100 : firstAttemptScore}`;
         }
 
@@ -194,32 +179,29 @@
             document.getElementById('quiz-container').classList.add('hidden');
             const resultDiv = document.getElementById('result-container');
             resultDiv.classList.remove('hidden');
-            
             const displayScore = isReviewMode ? 100 : firstAttemptScore;
-            const finalIncorrect = isReviewMode ? 0 : incorrectLevels.length;
             
             resultDiv.innerHTML = `
                 <div class="text-2xl font-bold mb-4">${isReviewMode ? '🎉 재시도 완료!' : '📝 첫 번째 결과'}</div>
-                <div class="text-5xl font-extrabold text-blue-600 mb-6">${displayScore}점</div>
-                <div class="bg-white border-2 border-gray-200 p-5 rounded-xl mb-6 text-left shadow-sm inline-block w-full">
-                    <div class="flex items-center mb-3">
-                        <span class="text-lg">❌ 끝까지 못 고친 오답:</span>
-                        <span class="ml-2 font-bold text-red-500 text-xl">${finalIncorrect}개</span>
-                    </div>
-                    ${!isReviewMode ? `
-                    <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
-                        <span class="text-lg">✅ 고쳐서 맞힌 문제:</span>
-                        <span class="ml-2 font-bold text-green-600 text-xl">${totalFailedCount}개 중 ${correctedCount}개</span>
-                    </div>` : ''}
-                </div>
-                <div class="mt-6">
+                <div class="text-6xl font-black text-blue-600 mb-8">${displayScore}점</div>
+                
+                ${!isReviewMode ? `
+                <div class="bg-green-50 border-2 border-green-200 p-6 rounded-3xl mb-8 text-center shadow-sm">
+                    <p class="text-lg text-green-800 font-bold mb-2">고쳐서 맞힌 문제 ✨</p>
+                    <p class="text-3xl font-black text-green-600">${totalFailedCount}개 중 ${correctedCount}개</p>
+                    <p class="text-sm text-green-700 mt-4 leading-relaxed italic">
+                        "틀려도 괜찮아, 끝까지 스스로 해낸 네가 정말 멋져!"
+                    </p>
+                </div>` : ''}
+                
+                <div class="flex flex-col gap-3">
                     ${!isReviewMode && incorrectLevels.length > 0 ? 
-                        `<button onclick="startReview()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">틀린 문제 다시 풀기</button>` : 
-                        `<button onclick="location.reload()" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold">처음부터 다시하기</button>`
+                        `<button onclick="startReview()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xl shadow-lg hover:bg-blue-700">틀린 문제 다시 풀기</button>` : 
+                        `<button onclick="location.reload()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xl shadow-lg hover:bg-black">처음부터 다시하기</button>`
                     }
                 </div>
             `;
-            saveResultToGoogleSheet({ score: displayScore, incorrect_count: finalIncorrect });
+            saveResultToGoogleSheet({ score: displayScore, incorrect_count: 0 }); // 오답은 항상 0으로 전송
         }
 
         async function saveResultToGoogleSheet(scoreData) {
