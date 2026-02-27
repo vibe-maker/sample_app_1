@@ -281,7 +281,7 @@ function showResult() {
 }
 
         async function saveResultToGoogleSheet(scoreData) {
-    const BACKEND_URL = "https://quiz-backend-aybm.onrender.com"; // 본인의 Render 주소
+    const BACKEND_URL = "https://quiz-backend-aybm.onrender.com/api/submit"; // 본인의 Render 주소
     
     try {
         const response = await fetch(BACKEND_URL, {
