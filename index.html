@@ -120,6 +120,9 @@
 
     <script>
         let gameSessionId = Date.now().toString();
+let firstAttemptScore = 0; // 첫 선택에 바로 맞힌 점수
+let correctedCount = 0;    // 고쳐서 맞힌 개수
+let totalFailedCount = 0;  // 첫 시도에 틀렸던 문제의 총 개수
         const allData = [
             { ko: "나는 오늘 아침에 샌드위치를 먹었어요.", en: ["I", "ate", "a sandwich", "this morning"], types: ["subject", "verb", "object", "time"] },
             { ko: "그녀는 지금 거실에서 공부를 해요.", en: ["She", "studies", "now", "in the living room"], types: ["subject", "verb", "time", "other"] },
@@ -240,47 +243,60 @@ function undoLastWord() {
             document.getElementById('next-btn').classList.remove('hidden');
         }
 
-        function handleNext() {
-            currentIndex++;
-            if (currentIndex < currentLevels.length) {
-                initLevel();
-            } else {
-                showResult();
-            }
+function handleNext() {
+    const currentData = allData[currentIndex];
+    const selectedBtn = currentCard.querySelector('.choice-btn.selected');
+    const hasEverFailed = currentCard.querySelector('.choice-btn.incorrect'); 
+    
+    if (selectedBtn && selectedBtn.dataset.level == currentData.level) {
+        if (!hasEverFailed) {
+            firstAttemptScore += 10;
+        } else {
+            // 처음엔 틀렸지만, 지금은 정답을 고른 상태
+            correctedCount++;
+            totalFailedCount++; 
         }
-
-function showResult() {
-    const container = document.getElementById('game-app');
-    const hasIncorrect = incorrectLevels.length > 0;
-
-    // 백엔드로 결과 전송 (비동기 호출)
-    saveResultToGoogleSheet({
-        score: score,
-        total_questions: allData.length,
-        incorrect_count: incorrectLevels.length
-    });
-
-    container.innerHTML = `
-        <div class="text-center py-6">
-            <h2 class="text-4xl font-black text-slate-800 mb-2">${isReviewMode ? '리뷰 완료!' : '챌린지 완료!'}</h2>
-            <p class="text-xl font-bold text-blue-600 mb-2">최종 점수: ${score}</p>
-            <p class="text-sm text-slate-400 mb-8">결과가 구글 시트에 기록되었습니다.</p>
-            
-            ${hasIncorrect ? `
-                <p class="mb-6 text-slate-600">${incorrectLevels.length}개의 문장을 더 연습해야 합니다.</p>
-                <button onclick="startReview()" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xl hover:bg-orange-600 transition-all mb-4">
-                    틀린 문제 다시 풀기
-                </button>
-            ` : `
-                <p class="mb-6 text-green-600 font-bold text-xl">완벽합니다! 모든 문장을 마스터하셨네요!</p>
-            `}
-            <button onclick="location.reload()" class="w-full bg-slate-200 text-slate-700 py-4 rounded-2xl font-black text-xl hover:bg-slate-300 transition-all">
-                처음부터 다시 시작
-            </button>
-        </div>
-    `;
+    } else {
+        // 정답을 못 맞히고 그냥 넘어가는 경우 (혹시 있다면)
+        if (hasEverFailed) totalFailedCount++;
+    }
+    // ... 기존 이동 로직 ...
 }
 
+function showResult() {
+    const finalIncorrect = incorrectLevels.length; // 끝까지 못 고친 오답
+    const displayScore = isReviewMode ? 100 : firstAttemptScore;
+    
+    let resultHTML = `
+        <div class="text-2xl font-bold mb-4">${isReviewMode ? '🎉 재시도 완료!' : '📝 첫 번째 결과'}</div>
+        <div class="text-5xl font-extrabold text-blue-600 mb-6">${displayScore}점</div>
+        
+        <div class="bg-white border-2 border-gray-200 p-5 rounded-xl mb-6 text-left shadow-sm">
+            <div class="flex items-center mb-3">
+                <span class="text-lg">❌ 끝까지 못 고친 오답:</span>
+                <span class="ml-2 font-bold text-red-500 text-xl">${finalIncorrect}개</span>
+            </div>
+            
+            ${!isReviewMode ? `
+            <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                <span class="text-lg">✅ 고쳐서 맞힌 문제:</span>
+                <span class="ml-2 font-bold text-green-600 text-xl">${totalFailedCount}개 중 ${correctedCount}개</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-4 leading-relaxed">
+                * 첫 선택이 오답이면 점수는 감점되지만,<br>
+                스스로 끝까지 고쳐내면 오답 개수에는 포함되지 않습니다.
+            </p>` : ''}
+        </div>
+    `;
+    
+    document.getElementById('result-container').innerHTML = resultHTML;
+
+    saveResultToGoogleSheet({
+        score: displayScore,
+        incorrect_count: finalIncorrect,
+        mode: isReviewMode ? "REVIEW" : "INITIAL"
+    });
+}
         async function saveResultToGoogleSheet(scoreData) {
     const BACKEND_URL = "https://quiz-backend-aybm.onrender.com/api/submit"; // 본인의 Render 주소
     
