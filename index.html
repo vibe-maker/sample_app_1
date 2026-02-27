@@ -7,46 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Nunito:wght@400;700;800&display=swap');
-        body {
-            font-family: 'Nunito', 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .game-card {
-            background: white;
-            border-radius: 2rem;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            max-width: 800px;
-            width: 100%;
-            padding: 2.5rem;
-            position: relative;
-        }
-        .word-piece {
-            background: white;
-            border: 2px solid #e2e8f0;
-            padding: 10px 20px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-weight: 700;
-            transition: all 0.2s;
-            user-select: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            color: #475569;
-            font-size: 1.1rem;
-        }
+        body { font-family: 'Nunito', 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .game-card { background: white; border-radius: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.1); max-width: 800px; width: 100%; padding: 2.5rem; position: relative; }
+        .word-piece { background: white; border: 2px solid #e2e8f0; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-weight: 700; transition: all 0.2s; user-select: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); color: #475569; font-size: 1.1rem; }
         .word-piece.used { opacity: 0.3; cursor: default; }
-        .drop-zone {
-            min-height: 100px;
-            background-color: #f8fafc;
-            border: 3px dashed #cbd5e1;
-            border-radius: 1.5rem;
-            display: flex; flex-wrap: wrap; gap: 12px; padding: 20px;
-            align-items: center; margin-bottom: 2rem;
-        }
+        .drop-zone { min-height: 100px; background-color: #f8fafc; border: 3px dashed #cbd5e1; border-radius: 1.5rem; display: flex; flex-wrap: wrap; gap: 12px; padding: 20px; align-items: center; margin-bottom: 2rem; }
         .part-subject { color: #2563eb; border: 2px solid #2563eb; background: #eff6ff; }
         .part-verb { color: #dc2626; border: 2px solid #dc2626; background: #fef2f2; }
         .part-object { color: #059669; border: 2px solid #059669; background: #ecfdf5; }
@@ -87,11 +52,11 @@
         let firstAttemptScore = 0; 
         let correctedCount = 0;    
         let totalFailedCount = 0;  
-        let score = 0;
+        let currentScoreDisplay = 0;
 
         const allData = [
             { ko: "나는 오늘 아침에 샌드위치를 먹었어요.", en: ["I", "ate", "a sandwich", "this morning"], types: ["subject", "verb", "object", "time"] },
-            { ko: "그녀는 지금 거실에서 공부를 해요.", en: ["She", "studies", "in the living room", "now" ], types: ["subject", "verb", "other", "time"] },
+            { ko: "그녀는 지금 거실에서 공부를 해요.", en: ["She", "studies", "in the living room", "now"], types: ["subject", "verb", "other", "time"] },
             { ko: "우리는 내일 축구를 할 거예요.", en: ["We", "will play", "soccer", "tomorrow"], types: ["subject", "verb", "object", "time"] },
             { ko: "나의 아빠는 어제 세차를 하셨어요.", en: ["My dad", "washed", "the car", "yesterday"], types: ["subject", "verb", "object", "time"] },
             { ko: "그들은 매일 공원에서 달려요.", en: ["They", "run", "in the park", "every day"], types: ["subject", "verb", "other", "time"] },
@@ -114,99 +79,4 @@
                 showResult();
                 return;
             }
-            const data = currentLevels[currentIndex];
-            selectedWords = [];
-            levelHasError = false;
-            
-            document.getElementById('quiz-container').classList.remove('hidden');
-            document.getElementById('result-container').classList.add('hidden');
-            document.getElementById('korean-hint').innerText = data.ko;
-            document.getElementById('level-indicator').innerText = isReviewMode ? `Reviewing...` : `Level ${currentIndex + 1} / ${currentLevels.length}`;
-            document.getElementById('progress-bar').style.width = `${(currentIndex / currentLevels.length) * 100}%`;
-            document.getElementById('drop-zone').innerHTML = '';
-            document.getElementById('message').innerText = '';
-            document.getElementById('next-btn').classList.add('hidden');
-
-            const pool = document.getElementById('word-pool');
-            pool.innerHTML = '';
-            const shuffled = [...data.en].sort(() => Math.random() - 0.5);
-            shuffled.forEach(word => {
-                const btn = document.createElement('div');
-                btn.className = 'word-piece';
-                btn.innerText = word;
-                btn.onclick = () => selectWord(btn, word);
-                pool.appendChild(btn);
-            });
-        }
-
-        function selectWord(btn, word) {
-            if (btn.classList.contains('used')) return;
-            selectedWords.push(word);
-            btn.classList.add('used');
-            const wordBox = document.createElement('div');
-            wordBox.className = 'word-piece';
-            wordBox.innerText = word;
-            document.getElementById('drop-zone').appendChild(wordBox);
-            if (selectedWords.length === currentLevels[currentIndex].en.length) checkSentence();
-        }
-
-        function undoLastWord() {
-            if (selectedWords.length === 0) return;
-            const removedWord = selectedWords.pop();
-            const dropZone = document.getElementById('drop-zone');
-            if (dropZone.lastChild) dropZone.lastChild.remove();
-            const poolBtns = Array.from(document.querySelectorAll('#word-pool .word-piece')).reverse();
-            const targetBtn = poolBtns.find(btn => btn.innerText === removedWord && btn.classList.contains('used'));
-            if (targetBtn) targetBtn.classList.remove('used');
-            document.getElementById('message').innerText = '';
-            document.getElementById('next-btn').classList.add('hidden');
-        }
-
-        function checkSentence() {
-            const data = currentLevels[currentIndex];
-            const isCorrect = JSON.stringify(selectedWords) === JSON.stringify(data.en);
-            const dropZone = document.getElementById('drop-zone');
-            dropZone.innerHTML = '';
-            selectedWords.forEach((word, idx) => {
-                const wordBox = document.createElement('div');
-                if (isCorrect) {
-                    const type = data.types[idx];
-                    wordBox.className = `word-piece part-${type}`;
-                } else {
-                    wordBox.className = `word-piece border-red-500 text-red-500`;
-                    levelHasError = true;
-                }
-                wordBox.innerText = word;
-                dropZone.appendChild(wordBox);
-            });
-
-            if (isCorrect) {
-                document.getElementById('message').innerText = "Correct! ✨";
-                document.getElementById('message').className = "font-bold text-lg text-green-600";
-                document.getElementById('next-btn').classList.remove('hidden');
-            } else {
-                document.getElementById('message').innerText = "Incorrect order. (순서가 틀렸어요)";
-                document.getElementById('message').className = "font-bold text-lg text-red-400";
-                if (!isReviewMode && !incorrectLevels.includes(data)) incorrectLevels.push(data);
-            }
-        }
-
-        function handleNext() {
-            if (!isReviewMode) {
-                if (!levelHasError) firstAttemptScore += 10;
-                else { correctedCount++; totalFailedCount++; }
-            }
-            currentIndex++;
-            document.getElementById('score-text').innerText = `Score: ${isReviewMode ? score : firstAttemptScore}`;
-            initLevel();
-        }
-
-        function showResult() {
-            document.getElementById('quiz-container').classList.add('hidden');
-            const resultDiv = document.getElementById('result-container');
-            resultDiv.classList.remove('hidden');
-            const finalIncorrect = isReviewMode ? 0 : incorrectLevels.length;
-            const displayScore = isReviewMode ? 100 : firstAttemptScore;
-            
-            resultDiv.innerHTML = `
-                <div class="text-2xl font-bold mb-4
+            const data = currentLevels
