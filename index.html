@@ -119,6 +119,7 @@
     </div>
 
     <script>
+        let gameSessionId = Date.now().toString();
         const allData = [
             { ko: "나는 오늘 아침에 샌드위치를 먹었어요.", en: ["I", "ate", "a sandwich", "this morning"], types: ["subject", "verb", "object", "time"] },
             { ko: "그녀는 지금 거실에서 공부를 해요.", en: ["She", "studies", "now", "in the living room"], types: ["subject", "verb", "time", "other"] },
@@ -287,9 +288,12 @@ function showResult() {
         const response = await fetch(BACKEND_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(scoreData)
+            body: JSON.stringify({
+                ...scoreData,
+                session_id: gameSessionId, // 세션 ID 추가
+                mode: isReviewMode ? "REVIEW" : "INITIAL" // 현재 모드 추가
+            })
         });
-        if (response.ok) console.log("데이터가 구글 시트에 저장되었습니다.");
     } catch (error) {
         console.error("데이터 전송 중 오류 발생:", error);
     }
