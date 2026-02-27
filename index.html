@@ -182,20 +182,26 @@
             }
         }
 
-        function undoLastWord() {
-            if (selectedWords.length === 0) return;
-            const removedWord = selectedWords.pop();
-            document.getElementById('drop-zone').lastChild.remove();
-            
-            const poolBtns = document.querySelectorAll('#word-pool .word-piece');
-            for (let btn of poolBtns) {
-                if (btn.innerText === removedWord && btn.classList.contains('used')) {
-                    btn.classList.remove('used');
-                    break;
-                }
-            }
-        }
+        
+function undoLastWord() {
+    if (selectedWords.length === 0) return;
+    
+    const removedWord = selectedWords.pop();
+    const dropZone = document.getElementById('drop-zone');
+    if (dropZone.lastChild) dropZone.lastChild.remove();
+    
+    // 단어 풀에서 해당 단어를 찾아 'used' 클래스 제거 (역순으로 찾아 정확도 향상)
+    const poolBtns = Array.from(document.querySelectorAll('#word-pool .word-piece')).reverse();
+    const targetBtn = poolBtns.find(btn => btn.innerText === removedWord && btn.classList.contains('used'));
+    
+    if (targetBtn) targetBtn.classList.remove('used');
 
+    // 상태 메시지 및 다음 버튼 초기화
+    document.getElementById('message').innerText = '';
+    document.getElementById('next-btn').classList.add('hidden');
+}
+
+        
         function checkSentence() {
             const data = currentLevels[currentIndex];
             const isCorrect = JSON.stringify(selectedWords) === JSON.stringify(data.en);
@@ -242,30 +248,52 @@
             }
         }
 
-        function showResult() {
-            const container = document.getElementById('game-app');
-            const hasIncorrect = incorrectLevels.length > 0;
+function showResult() {
+    const container = document.getElementById('game-app');
+    const hasIncorrect = incorrectLevels.length > 0;
 
-            container.innerHTML = `
-                <div class="text-center py-6">
-                    <h2 class="text-4xl font-black text-slate-800 mb-2">${isReviewMode ? 'Review Finished!' : 'Challenge Complete!'}</h2>
-                    <p class="text-xl font-bold text-blue-600 mb-8">Final Score: ${score}</p>
-                    
-                    ${hasIncorrect ? `
-                        <p class="mb-6 text-slate-600">You have ${incorrectLevels.length} sentences to practice more.</p>
-                        <button onclick="startReview()" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xl hover:bg-orange-600 transition-all mb-4">
-                            Retry Incorrect Sentences (틀린 문제 다시 풀기)
-                        </button>
-                    ` : `
-                        <p class="mb-6 text-green-600 font-bold text-xl">Perfect! You mastered all sentences!</p>
-                    `}
-                    
-                    <button onclick="location.reload()" class="w-full bg-slate-200 text-slate-700 py-4 rounded-2xl font-black text-xl hover:bg-slate-300 transition-all">
-                        Restart All
-                    </button>
-                </div>
-            `;
-        }
+    // 백엔드로 결과 전송 (비동기 호출)
+    saveResultToGoogleSheet({
+        score: score,
+        total_questions: allData.length,
+        incorrect_count: incorrectLevels.length
+    });
+
+    container.innerHTML = `
+        <div class="text-center py-6">
+            <h2 class="text-4xl font-black text-slate-800 mb-2">${isReviewMode ? '리뷰 완료!' : '챌린지 완료!'}</h2>
+            <p class="text-xl font-bold text-blue-600 mb-2">최종 점수: ${score}</p>
+            <p class="text-sm text-slate-400 mb-8">결과가 구글 시트에 기록되었습니다.</p>
+            
+            ${hasIncorrect ? `
+                <p class="mb-6 text-slate-600">${incorrectLevels.length}개의 문장을 더 연습해야 합니다.</p>
+                <button onclick="startReview()" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-xl hover:bg-orange-600 transition-all mb-4">
+                    틀린 문제 다시 풀기
+                </button>
+            ` : `
+                <p class="mb-6 text-green-600 font-bold text-xl">완벽합니다! 모든 문장을 마스터하셨네요!</p>
+            `}
+            <button onclick="location.reload()" class="w-full bg-slate-200 text-slate-700 py-4 rounded-2xl font-black text-xl hover:bg-slate-300 transition-all">
+                처음부터 다시 시작
+            </button>
+        </div>
+    `;
+}
+
+        async function saveResultToGoogleSheet(scoreData) {
+    const BACKEND_URL = "https://quiz-backend-aybm.onrender.com"; // 본인의 Render 주소
+    
+    try {
+        const response = await fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(scoreData)
+        });
+        if (response.ok) console.log("데이터가 구글 시트에 저장되었습니다.");
+    } catch (error) {
+        console.error("데이터 전송 중 오류 발생:", error);
+    }
+}
 
         function startReview() {
             currentLevels = [...incorrectLevels];
