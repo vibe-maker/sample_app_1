@@ -48,7 +48,8 @@
     </div>
 
     <script>
-        let gameSessionId = Date.now().toString();
+        // 전역 변수 설정
+        const gameSessionId = Date.now().toString();
         let firstAttemptScore = 0; 
         let correctedCount = 0;    
         let totalFailedCount = 0;  
@@ -62,21 +63,3 @@
             { ko: "그들은 매일 공원에서 달려요.", en: ["They", "run", "in the park", "every day"], types: ["subject", "verb", "other", "time"] },
             { ko: "나는 다음 주에 친구를 만날 거예요.", en: ["I", "will meet", "my friend", "next week"], types: ["subject", "verb", "object", "time"] },
             { ko: "민수는 지난 주말에 영화를 봤어요.", en: ["Minsu", "watched", "a movie", "last weekend"], types: ["subject", "verb", "object", "time"] },
-            { ko: "선생님은 지금 책을 읽고 계세요.", en: ["The teacher", "is reading", "a book", "now"], types: ["subject", "verb", "object", "time"] },
-            { ko: "우리는 저녁에 피자를 먹을 거예요.", en: ["We", "will eat", "pizza", "this evening"], types: ["subject", "verb", "object", "time"] },
-            { ko: "엄마는 오늘 아침에 일찍 일어나셨어요.", en: ["My mom", "woke up", "early", "this morning"], types: ["subject", "verb", "other", "time"] }
-        ];
-
-        let currentLevels = [...allData];
-        let currentIndex = 0;
-        let selectedWords = [];
-        let incorrectLevels = []; 
-        let isReviewMode = false;
-        let levelHasError = false; 
-
-        function initLevel() {
-            if (currentIndex >= currentLevels.length) {
-                showResult();
-                return;
-            }
-            const data = currentLevels
