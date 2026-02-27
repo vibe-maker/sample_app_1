@@ -91,271 +91,47 @@
 <body>
 
     <div id="game-app" class="game-card">
-        <div class="progress-container">
-            <div id="progress-bar"></div>
-        </div>
+        <div id="result-container" class="hidden text-center"></div>
 
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-black text-slate-800">🏠 Life Sentence Puzzle</h1>
-            <div class="text-right">
-                <div id="score-text" class="text-blue-600 font-extrabold text-xl">Score: 0</div>
-                <div id="level-indicator" class="text-slate-400 text-sm font-bold">Level 1 / 10</div>
+        <div id="quiz-container">
+            <div class="progress-container">
+                <div id="progress-bar"></div>
             </div>
-        </div>
 
-        <div id="korean-hint" class="text-center font-bold text-xl mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100"></div>
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-black text-slate-800">🏠 Life Sentence Puzzle</h1>
+                <div class="text-right">
+                    <div id="score-text" class="text-blue-600 font-extrabold text-xl">Score: 0</div>
+                    <div id="level-indicator" class="text-slate-400 text-sm font-bold">Level 1 / 10</div>
+                </div>
+            </div>
 
-        <div id="drop-zone" class="drop-zone"></div>
+            <div id="korean-hint" class="text-center font-bold text-xl mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100"></div>
 
-        <div id="word-pool" class="flex flex-wrap justify-center gap-4 mb-10"></div>
+            <div id="drop-zone" class="drop-zone"></div>
 
-        <div class="flex justify-between items-center border-t pt-8">
-            <p id="message" class="font-bold text-lg h-8"></p>
-            <div class="flex gap-4">
-                <button id="undo-btn" onclick="undoLastWord()" class="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">Undo</button>
-                <button id="next-btn" onclick="handleNext()" class="hidden bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-black">Next →</button>
+            <div id="word-pool" class="flex flex-wrap justify-center gap-4 mb-10"></div>
+
+            <div class="flex justify-between items-center border-t pt-8">
+                <p id="message" class="font-bold text-lg h-8"></p>
+                <div class="flex gap-4">
+                    <button id="undo-btn" onclick="undoLastWord()" class="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">Undo</button>
+                    <button id="next-btn" onclick="handleNext()" class="hidden bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-black">Next →</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         let gameSessionId = Date.now().toString();
-let firstAttemptScore = 0; // 첫 선택에 바로 맞힌 점수
-let correctedCount = 0;    // 고쳐서 맞힌 개수
-let totalFailedCount = 0;  // 첫 시도에 틀렸던 문제의 총 개수
+        let firstAttemptScore = 0; 
+        let correctedCount = 0;    
+        let totalFailedCount = 0;  
+
         const allData = [
             { ko: "나는 오늘 아침에 샌드위치를 먹었어요.", en: ["I", "ate", "a sandwich", "this morning"], types: ["subject", "verb", "object", "time"] },
             { ko: "그녀는 지금 거실에서 공부를 해요.", en: ["She", "studies", "now", "in the living room"], types: ["subject", "verb", "time", "other"] },
             { ko: "우리는 내일 축구를 할 거예요.", en: ["We", "will play", "soccer", "tomorrow"], types: ["subject", "verb", "object", "time"] },
             { ko: "나의 아빠는 어제 세차를 하셨어요.", en: ["My dad", "washed", "the car", "yesterday"], types: ["subject", "verb", "object", "time"] },
             { ko: "그들은 매일 공원에서 달려요.", en: ["They", "run", "in the park", "every day"], types: ["subject", "verb", "other", "time"] },
-            { ko: "나는 다음 주에 친구를 만날 거예요.", en: ["I", "will meet", "my friend", "next week"], types: ["subject", "verb", "object", "time"] },
-            { ko: "민수는 지난 주말에 영화를 봤어요.", en: ["Minsu", "watched", "a movie", "last weekend"], types: ["subject", "verb", "object", "time"] },
-            { ko: "선생님은 지금 책을 읽고 계세요.", en: ["The teacher", "is reading", "a book", "now"], types: ["subject", "verb", "object", "time"] },
-            { ko: "우리는 저녁에 피자를 먹을 거예요.", en: ["We", "will eat", "pizza", "this evening"], types: ["subject", "verb", "object", "time"] },
-            { ko: "엄마는 오늘 아침에 일찍 일어나셨어요.", en: ["My mom", "woke up", "early", "this morning"], types: ["subject", "verb", "other", "time"] }
-        ];
-
-        let currentLevels = [...allData];
-        let currentIndex = 0;
-        let score = 0;
-        let selectedWords = [];
-        let incorrectLevels = []; // 틀린 레벨 추적
-        let isReviewMode = false;
-        let levelHasError = false; // 현재 레벨에서 틀린 적이 있는지
-
-        function initLevel() {
-            const data = currentLevels[currentIndex];
-            selectedWords = [];
-            levelHasError = false;
-            
-            document.getElementById('korean-hint').innerText = data.ko;
-            document.getElementById('level-indicator').innerText = isReviewMode ? `Reviewing...` : `Level ${currentIndex + 1} / ${currentLevels.length}`;
-            document.getElementById('progress-bar').style.width = isReviewMode ? '100%' : `${(currentIndex / currentLevels.length) * 100}%`;
-            document.getElementById('drop-zone').innerHTML = '';
-            document.getElementById('message').innerText = '';
-            document.getElementById('next-btn').classList.add('hidden');
-
-            const pool = document.getElementById('word-pool');
-            pool.innerHTML = '';
-            const shuffled = [...data.en].sort(() => Math.random() - 0.5);
-            shuffled.forEach(word => {
-                const btn = document.createElement('div');
-                btn.className = 'word-piece';
-                btn.innerText = word;
-                btn.onclick = () => selectWord(btn, word);
-                pool.appendChild(btn);
-            });
-        }
-
-        function selectWord(btn, word) {
-            if (btn.classList.contains('used')) return;
-
-            const data = currentLevels[currentIndex];
-            // 즉각 수정하지 않음: 순서가 틀려도 일단 들어감
-            selectedWords.push(word);
-            btn.classList.add('used');
-
-            const wordBox = document.createElement('div');
-            wordBox.className = 'word-piece';
-            wordBox.innerText = word;
-            document.getElementById('drop-zone').appendChild(wordBox);
-
-            if (selectedWords.length === data.en.length) {
-                checkSentence();
-            }
-        }
-
-        
-function undoLastWord() {
-    if (selectedWords.length === 0) return;
-    
-    const removedWord = selectedWords.pop();
-    const dropZone = document.getElementById('drop-zone');
-    if (dropZone.lastChild) dropZone.lastChild.remove();
-    
-    // 단어 풀에서 해당 단어를 찾아 'used' 클래스 제거 (역순으로 찾아 정확도 향상)
-    const poolBtns = Array.from(document.querySelectorAll('#word-pool .word-piece')).reverse();
-    const targetBtn = poolBtns.find(btn => btn.innerText === removedWord && btn.classList.contains('used'));
-    
-    if (targetBtn) targetBtn.classList.remove('used');
-
-    // 상태 메시지 및 다음 버튼 초기화
-    document.getElementById('message').innerText = '';
-    document.getElementById('next-btn').classList.add('hidden');
-}
-
-        
-        function checkSentence() {
-            const data = currentLevels[currentIndex];
-            const isCorrect = JSON.stringify(selectedWords) === JSON.stringify(data.en);
-
-            const dropZone = document.getElementById('drop-zone');
-            dropZone.innerHTML = ''; // 다시 그리기 (색상 입히기)
-
-            selectedWords.forEach((word, idx) => {
-                const wordBox = document.createElement('div');
-                // 정답 순서일 때만 색상을 입힘, 틀리면 그냥 빨간 테두리만
-                if (isCorrect) {
-                    const type = data.types[idx];
-                    wordBox.className = `word-piece part-${type}`;
-                } else {
-                    wordBox.className = `word-piece border-red-500 text-red-500`;
-                }
-                wordBox.innerText = word;
-                dropZone.appendChild(wordBox);
-            });
-
-            if (isCorrect) {
-                document.getElementById('message').innerText = "Correct! ✨";
-                document.getElementById('message').className = "font-bold text-lg text-green-600";
-                if (!levelHasError && !isReviewMode) score += 10;
-            } else {
-                document.getElementById('message').innerText = "Incorrect order. (순서가 틀렸어요)";
-                document.getElementById('message').className = "font-bold text-lg text-red-400";
-                if (!isReviewMode) {
-                    // 틀린 데이터 저장 (중복 방지)
-                    if (!incorrectLevels.includes(data)) incorrectLevels.push(data);
-                }
-            }
-            
-            document.getElementById('score-text').innerText = `Score: ${score}`;
-            document.getElementById('next-btn').classList.remove('hidden');
-        }
-
-function handleNext() {
-    const currentData = allData[currentIndex];
-    const selectedBtn = currentCard.querySelector('.choice-btn.selected');
-    const hasEverFailed = currentCard.querySelector('.choice-btn.incorrect'); 
-    
-    if (selectedBtn && selectedBtn.dataset.level == currentData.level) {
-        if (!hasEverFailed) {
-            firstAttemptScore += 10;
-        } else {
-            // 처음엔 틀렸지만, 지금은 정답을 고른 상태
-            correctedCount++;
-            totalFailedCount++; 
-        }
-    } else {
-        // 정답을 못 맞히고 그냥 넘어가는 경우 (혹시 있다면)
-        if (hasEverFailed) totalFailedCount++;
-    }
-    // ... 기존 이동 로직 ...
-}
-
-function showResult() {
-    const finalIncorrect = incorrectLevels.length; // 끝까지 못 고친 오답
-    const displayScore = isReviewMode ? 100 : firstAttemptScore;
-    
-    let resultHTML = `
-        <div class="text-2xl font-bold mb-4">${isReviewMode ? '🎉 재시도 완료!' : '📝 첫 번째 결과'}</div>
-        <div class="text-5xl font-extrabold text-blue-600 mb-6">${displayScore}점</div>
-        
-        <div class="bg-white border-2 border-gray-200 p-5 rounded-xl mb-6 text-left shadow-sm">
-            <div class="flex items-center mb-3">
-                <span class="text-lg">❌ 끝까지 못 고친 오답:</span>
-                <span class="ml-2 font-bold text-red-500 text-xl">${finalIncorrect}개</span>
-            </div>
-            
-            ${!isReviewMode ? `
-            <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
-                <span class="text-lg">✅ 고쳐서 맞힌 문제:</span>
-                <span class="ml-2 font-bold text-green-600 text-xl">${totalFailedCount}개 중 ${correctedCount}개</span>
-            </div>
-            <p class="text-xs text-gray-400 mt-4 leading-relaxed">
-                * 첫 선택이 오답이면 점수는 감점되지만,<br>
-                스스로 끝까지 고쳐내면 오답 개수에는 포함되지 않습니다.
-            </p>` : ''}
-        </div>
-    `;
-    
-    document.getElementById('result-container').innerHTML = resultHTML;
-
-    saveResultToGoogleSheet({
-        score: displayScore,
-        incorrect_count: finalIncorrect,
-        mode: isReviewMode ? "REVIEW" : "INITIAL"
-    });
-}
-        async function saveResultToGoogleSheet(scoreData) {
-    const BACKEND_URL = "https://quiz-backend-aybm.onrender.com/api/submit"; // 본인의 Render 주소
-    
-    try {
-        const response = await fetch(BACKEND_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...scoreData,
-                session_id: gameSessionId, // 세션 ID 추가
-                mode: isReviewMode ? "REVIEW" : "INITIAL" // 현재 모드 추가
-            })
-        });
-    } catch (error) {
-        console.error("데이터 전송 중 오류 발생:", error);
-    }
-}
-
-        function startReview() {
-            currentLevels = [...incorrectLevels];
-            incorrectLevels = [];
-            currentIndex = 0;
-            isReviewMode = true;
-            // 앱 구조 복구 후 레벨 시작
-            location.reload(); // 간단한 구현을 위해 새로고침 대신 상태 초기화 로직이 필요하지만, 여기선 UI를 다시 그려야 함.
-        }
-
-        // 실제 리뷰 모드 전환을 위한 상태 유지 로직 (간소화 버전)
-        window.startReview = function() {
-            const container = document.getElementById('game-app');
-            // UI 초기화
-            container.innerHTML = `
-                <div class="progress-container"><div id="progress-bar"></div></div>
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl font-black text-slate-800">🔄 Review Mode</h1>
-                    <div class="text-right">
-                        <div id="score-text" class="text-blue-600 font-extrabold text-xl">Score: ${score}</div>
-                        <div id="level-indicator" class="text-slate-400 text-sm font-bold"></div>
-                    </div>
-                </div>
-                <div id="korean-hint" class="text-center font-bold text-xl mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100"></div>
-                <div id="drop-zone" class="drop-zone"></div>
-                <div id="word-pool" class="flex flex-wrap justify-center gap-4 mb-10"></div>
-                <div class="flex justify-between items-center border-t pt-8">
-                    <p id="message" class="font-bold text-lg h-8"></p>
-                    <div class="flex gap-4">
-                        <button id="undo-btn" onclick="undoLastWord()" class="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">Undo</button>
-                        <button id="next-btn" onclick="handleNext()" class="hidden bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-black">Next →</button>
-                    </div>
-                </div>
-            `;
-            currentLevels = [...incorrectLevels];
-            incorrectLevels = [];
-            currentIndex = 0;
-            isReviewMode = true;
-            initLevel();
-        };
-
-        window.onload = initLevel;
-    </script>
-</body>
-</html>
+            { ko: "나는 다음 주에 친구를 만날 거예요.", en: ["I", "will meet", "my friend", "next week"], types:
