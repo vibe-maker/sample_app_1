@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Life Sentence Puzzle</title>
+    <title>Life Sentence Puzzle</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Nunito:wght@400;700;800&display=swap');
         body { font-family: 'Nunito', 'Noto Sans KR', sans-serif; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .game-card { background: white; border-radius: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.1); max-width: 800px; width: 100%; padding: 2.5rem; position: relative; }
-        .word-piece { background: white; border: 2px solid #e2e8f0; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-weight: 700; transition: all 0.2s; user-select: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05); color: #475569; font-size: 1.1rem; }
+        .game-card { background: white; border-radius: 2rem; box-shadow: 0 20px 50px rgba(0,0,0,0.1); max-width: 800px; width: 100%; padding: 2.5rem; }
+        .word-piece { background: white; border: 2px solid #e2e8f0; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-weight: 700; transition: all 0.2s; user-select: none; color: #475569; font-size: 1.1rem; }
         .word-piece.used { opacity: 0.3; cursor: default; }
         .drop-zone { min-height: 100px; background-color: #f8fafc; border: 3px dashed #cbd5e1; border-radius: 1.5rem; display: flex; flex-wrap: wrap; gap: 12px; padding: 20px; align-items: center; margin-bottom: 2rem; }
         .part-subject { color: #2563eb; border: 2px solid #2563eb; background: #eff6ff; }
@@ -28,10 +28,10 @@
         <div id="quiz-container">
             <div class="progress-container"><div id="progress-bar"></div></div>
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-black text-slate-800">🏠 Life Sentence Puzzle</h1>
+                <h1 class="text-2xl font-black text-slate-800">🏠 Life Puzzle</h1>
                 <div class="text-right">
                     <div id="score-text" class="text-blue-600 font-extrabold text-xl">Score: 0</div>
-                    <div id="level-indicator" class="text-slate-400 text-sm font-bold">Level 1 / 10</div>
+                    <div id="level-indicator" class="text-slate-400 text-sm font-bold"></div>
                 </div>
             </div>
             <div id="korean-hint" class="text-center font-bold text-xl mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100"></div>
@@ -48,12 +48,10 @@
     </div>
 
     <script>
-        // 전역 변수 설정
         const gameSessionId = Date.now().toString();
         let firstAttemptScore = 0; 
         let correctedCount = 0;    
-        let totalFailedCount = 0;  
-        let currentScoreDisplay = 0;
+        let totalFailedCount = 0;
 
         const allData = [
             { ko: "나는 오늘 아침에 샌드위치를 먹었어요.", en: ["I", "ate", "a sandwich", "this morning"], types: ["subject", "verb", "object", "time"] },
@@ -63,3 +61,158 @@
             { ko: "그들은 매일 공원에서 달려요.", en: ["They", "run", "in the park", "every day"], types: ["subject", "verb", "other", "time"] },
             { ko: "나는 다음 주에 친구를 만날 거예요.", en: ["I", "will meet", "my friend", "next week"], types: ["subject", "verb", "object", "time"] },
             { ko: "민수는 지난 주말에 영화를 봤어요.", en: ["Minsu", "watched", "a movie", "last weekend"], types: ["subject", "verb", "object", "time"] },
+            { ko: "선생님은 지금 책을 읽고 계세요.", en: ["The teacher", "is reading", "a book", "now"], types: ["subject", "verb", "object", "time"] },
+            { ko: "우리는 저녁에 피자를 먹을 거예요.", en: ["We", "will eat", "pizza", "this evening"], types: ["subject", "verb", "object", "time"] },
+            { ko: "엄마는 오늘 아침에 일찍 일어나셨어요.", en: ["My mom", "woke up", "early", "this morning"], types: ["subject", "verb", "other", "time"] }
+        ];
+
+        let currentLevels = [...allData];
+        let currentIndex = 0;
+        let selectedWords = [];
+        let incorrectLevels = []; 
+        let isReviewMode = false;
+        let levelHasError = false;
+
+        function initLevel() {
+            const data = currentLevels[currentIndex];
+            if (!data) return;
+
+            selectedWords = [];
+            levelHasError = false;
+            
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('result-container').classList.add('hidden');
+            document.getElementById('korean-hint').innerText = data.ko;
+            document.getElementById('level-indicator').innerText = isReviewMode ? `Reviewing...` : `Level ${currentIndex + 1} / ${currentLevels.length}`;
+            document.getElementById('progress-bar').style.width = `${(currentIndex / currentLevels.length) * 100}%`;
+            document.getElementById('drop-zone').innerHTML = '';
+            document.getElementById('message').innerText = '';
+            document.getElementById('next-btn').classList.add('hidden');
+
+            const pool = document.getElementById('word-pool');
+            pool.innerHTML = '';
+            [...data.en].sort(() => Math.random() - 0.5).forEach(word => {
+                const btn = document.createElement('div');
+                btn.className = 'word-piece';
+                btn.innerText = word;
+                btn.onclick = function() {
+                    if (btn.classList.contains('used')) return;
+                    btn.classList.add('used');
+                    selectedWords.push(word);
+                    const wordBox = document.createElement('div');
+                    wordBox.className = 'word-piece';
+                    wordBox.innerText = word;
+                    document.getElementById('drop-zone').appendChild(wordBox);
+                    if (selectedWords.length === data.en.length) checkSentence();
+                };
+                pool.appendChild(btn);
+            });
+        }
+
+        function undoLastWord() {
+            if (selectedWords.length === 0) return;
+            const removedWord = selectedWords.pop();
+            const dropZone = document.getElementById('drop-zone');
+            if (dropZone.lastChild) dropZone.lastChild.remove();
+            
+            const poolBtns = Array.from(document.querySelectorAll('#word-pool .word-piece'));
+            const targetBtn = poolBtns.find(btn => btn.innerText === removedWord && btn.classList.contains('used'));
+            if (targetBtn) targetBtn.classList.remove('used');
+            document.getElementById('message').innerText = '';
+            document.getElementById('next-btn').classList.add('hidden');
+        }
+
+        function checkSentence() {
+            const data = currentLevels[currentIndex];
+            const isCorrect = JSON.stringify(selectedWords) === JSON.stringify(data.en);
+            const dropZone = document.getElementById('drop-zone');
+            dropZone.innerHTML = '';
+            
+            selectedWords.forEach((word, idx) => {
+                const wordBox = document.createElement('div');
+                if (isCorrect) {
+                    wordBox.className = `word-piece part-${data.types[idx]}`;
+                } else {
+                    wordBox.className = `word-piece border-red-500 text-red-500`;
+                    levelHasError = true;
+                }
+                wordBox.innerText = word;
+                dropZone.appendChild(wordBox);
+            });
+
+            if (isCorrect) {
+                document.getElementById('message').innerText = "Correct! ✨";
+                document.getElementById('message').className = "font-bold text-lg text-green-600";
+                document.getElementById('next-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('message').innerText = "Incorrect order. (순서가 틀렸어요)";
+                document.getElementById('message').className = "font-bold text-lg text-red-400";
+                if (!isReviewMode && !incorrectLevels.includes(data)) incorrectLevels.push(data);
+            }
+        }
+
+        function handleNext() {
+            if (!isReviewMode) {
+                if (!levelHasError) firstAttemptScore += 10;
+                else { correctedCount++; totalFailedCount++; }
+            }
+            currentIndex++;
+            if (currentIndex < currentLevels.length) initLevel();
+            else showResult();
+            
+            document.getElementById('score-text').innerText = `Score: ${isReviewMode ? 100 : firstAttemptScore}`;
+        }
+
+        function showResult() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            const resultDiv = document.getElementById('result-container');
+            resultDiv.classList.remove('hidden');
+            
+            const displayScore = isReviewMode ? 100 : firstAttemptScore;
+            const finalIncorrect = isReviewMode ? 0 : incorrectLevels.length;
+            
+            resultDiv.innerHTML = `
+                <div class="text-2xl font-bold mb-4">${isReviewMode ? '🎉 재시도 완료!' : '📝 첫 번째 결과'}</div>
+                <div class="text-5xl font-extrabold text-blue-600 mb-6">${displayScore}점</div>
+                <div class="bg-white border-2 border-gray-200 p-5 rounded-xl mb-6 text-left shadow-sm inline-block w-full">
+                    <div class="flex items-center mb-3">
+                        <span class="text-lg">❌ 끝까지 못 고친 오답:</span>
+                        <span class="ml-2 font-bold text-red-500 text-xl">${finalIncorrect}개</span>
+                    </div>
+                    ${!isReviewMode ? `
+                    <div class="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                        <span class="text-lg">✅ 고쳐서 맞힌 문제:</span>
+                        <span class="ml-2 font-bold text-green-600 text-xl">${totalFailedCount}개 중 ${correctedCount}개</span>
+                    </div>` : ''}
+                </div>
+                <div class="mt-6">
+                    ${!isReviewMode && incorrectLevels.length > 0 ? 
+                        `<button onclick="startReview()" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">틀린 문제 다시 풀기</button>` : 
+                        `<button onclick="location.reload()" class="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold">처음부터 다시하기</button>`
+                    }
+                </div>
+            `;
+            saveResultToGoogleSheet({ score: displayScore, incorrect_count: finalIncorrect });
+        }
+
+        async function saveResultToGoogleSheet(scoreData) {
+            const BACKEND_URL = "https://quiz-backend-aybm.onrender.com/api/submit";
+            try {
+                await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...scoreData, session_id: gameSessionId, mode: isReviewMode ? "REVIEW" : "INITIAL" })
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function startReview() {
+            currentLevels = [...incorrectLevels];
+            incorrectLevels = []; currentIndex = 0; isReviewMode = true;
+            initLevel();
+        }
+
+        window.onload = initLevel;
+    </script>
+</body>
+</html>
