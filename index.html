@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Life Sentence Puzzle - With Review</title>
+    <title>Daily Life Sentence Puzzle - Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Nunito:wght@400;700;800&display=swap');
@@ -60,78 +60,3 @@
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
-            padding: 20px;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        /* 결과 강조 색상 */
-        .part-subject { color: #2563eb; border: 2px solid #2563eb; background: #eff6ff; }
-        .part-verb { color: #dc2626; border: 2px solid #dc2626; background: #fef2f2; }
-        .part-object { color: #059669; border: 2px solid #059669; background: #ecfdf5; }
-        .part-other { color: #4b5563; border: 2px solid #4b5563; background: #f9fafb; }
-        .part-time { color: #9333ea; border: 2px solid #9333ea; background: #faf5ff; }
-
-        .progress-container {
-            width: 100%;
-            height: 10px;
-            background: #e2e8f0;
-            border-radius: 5px;
-            margin-bottom: 2rem;
-            overflow: hidden;
-        }
-        #progress-bar {
-            height: 100%;
-            background: #3b82f6;
-            width: 0%;
-            transition: width 0.4s ease;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="game-app" class="game-card">
-        <div id="result-container" class="hidden text-center"></div>
-
-        <div id="quiz-container">
-            <div class="progress-container">
-                <div id="progress-bar"></div>
-            </div>
-
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-black text-slate-800">🏠 Life Sentence Puzzle</h1>
-                <div class="text-right">
-                    <div id="score-text" class="text-blue-600 font-extrabold text-xl">Score: 0</div>
-                    <div id="level-indicator" class="text-slate-400 text-sm font-bold">Level 1 / 10</div>
-                </div>
-            </div>
-
-            <div id="korean-hint" class="text-center font-bold text-xl mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100"></div>
-
-            <div id="drop-zone" class="drop-zone"></div>
-
-            <div id="word-pool" class="flex flex-wrap justify-center gap-4 mb-10"></div>
-
-            <div class="flex justify-between items-center border-t pt-8">
-                <p id="message" class="font-bold text-lg h-8"></p>
-                <div class="flex gap-4">
-                    <button id="undo-btn" onclick="undoLastWord()" class="px-6 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">Undo</button>
-                    <button id="next-btn" onclick="handleNext()" class="hidden bg-slate-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-black">Next →</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let gameSessionId = Date.now().toString();
-        let firstAttemptScore = 0; 
-        let correctedCount = 0;    
-        let totalFailedCount = 0;  
-
-        const allData = [
-            { ko: "나는 오늘 아침에 샌드위치를 먹었어요.", en: ["I", "ate", "a sandwich", "this morning"], types: ["subject", "verb", "object", "time"] },
-            { ko: "그녀는 지금 거실에서 공부를 해요.", en: ["She", "studies", "now", "in the living room"], types: ["subject", "verb", "time", "other"] },
-            { ko: "우리는 내일 축구를 할 거예요.", en: ["We", "will play", "soccer", "tomorrow"], types: ["subject", "verb", "object", "time"] },
-            { ko: "나의 아빠는 어제 세차를 하셨어요.", en: ["My dad", "washed", "the car", "yesterday"], types: ["subject", "verb", "object", "time"] },
-            { ko: "그들은 매일 공원에서 달려요.", en: ["They", "run", "in the park", "every day"], types: ["subject", "verb", "other", "time"] },
-            { ko: "나는 다음 주에 친구를 만날 거예요.", en: ["I", "will meet", "my friend", "next week"], types:
